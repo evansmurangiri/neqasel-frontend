@@ -42,25 +42,15 @@ export default function Products() {
     >
       <style>{`
         @keyframes shine {
-          to {
-            background-position: 200% center;
-          }
+          to { background-position: 200% center; }
         }
 
         .shine-word {
           display: inline-block;
-          background: linear-gradient(
-            90deg,
-            #34d399 0%,
-            #22d3ee 40%,
-            #fff 55%,
-            #22d3ee 70%,
-            #34d399 100%
-          );
+          background: linear-gradient(90deg,#34d399 0%,#22d3ee 40%,#fff 55%,#22d3ee 70%,#34d399 100%);
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          background-clip: text;
           animation: shine 2.8s linear infinite;
         }
 
@@ -68,320 +58,223 @@ export default function Products() {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 1.5rem;
-          align-items: start;
         }
 
-        @media (max-width: 680px) {
-          .prod-grid {
-            grid-template-columns: 1fr;
-          }
+        @media (max-width: 700px) {
+          .prod-grid { grid-template-columns: 1fr; }
+        }
+
+        .prod-card-ai, .prod-card-master {
+          border-radius: 16px;
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
         }
 
         .prod-card-ai {
           background: #111c1c;
           border: 1px solid #1e2e2e;
-          border-radius: 16px;
-          padding: clamp(1.5rem,4vw,2rem);
-          display: flex;
-          flex-direction: column;
-          transition: all 0.25s;
-        }
-
-        .prod-card-ai:hover {
-          border-color: rgba(16,185,129,0.3);
-          transform: translateY(-2px);
         }
 
         .prod-card-master {
-          position: relative;
           background: #0d1a1a;
           border: 2px solid rgba(16,185,129,0.5);
-          border-radius: 16px;
-          padding: clamp(1.5rem,4vw,2rem);
-          display: flex;
-          flex-direction: column;
+          position: relative;
         }
 
-        .feat-li,
-        .feat-li-top {
+        .product-logo {
+          width: 64px;
+          height: 64px;
+          border-radius: 16px;
           display: flex;
-          gap: 0.75rem;
-          color: #d1d5db;
-          font-size: 0.875rem;
+          align-items: center;
+          justify-content: center;
           margin-bottom: 1rem;
         }
 
+        .ai-logo {
+          background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+        }
+
+        .master-logo {
+          background: linear-gradient(135deg,#ec4899,#9333ea);
+        }
+
         .feat-li {
-          align-items: center;
+          display: flex;
+          gap: .7rem;
+          margin-bottom: 1rem;
+          color: #d1d5db;
+          font-size: .9rem;
         }
 
-        .feat-li-top {
-          align-items: flex-start;
-        }
-
-        .feat-icon {
-          color: #10b981;
-          font-size: 1.1rem;
-          flex-shrink: 0;
-        }
-
-        .btn-access,
-        .btn-purchase {
-          display: block;
-          width: 100%;
-          padding: 0.875rem;
-          border-radius: 12px;
-          color: #fff;
-          font-weight: 600;
-          font-size: 0.92rem;
-          text-align: center;
-          border: none;
-          cursor: pointer;
-          font-family: inherit;
-          text-decoration: none;
-          transition: opacity 0.2s;
-        }
+        .feat-icon { color: #10b981; }
 
         .btn-access {
           background: linear-gradient(to right,#3b82f6,#1d4ed8);
+          color: white;
+          padding: .8rem;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
         }
 
         .btn-purchase {
           background: linear-gradient(to right,#34d399,#22d3ee);
-          margin-bottom: 0.75rem;
+          color: white;
+          padding: .8rem;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          margin-bottom: .8rem;
         }
 
-        .btn-access:hover,
-        .btn-purchase:hover {
-          opacity: 0.88;
+        .compare-card {
+          margin-top: 2rem;
+          padding: 1.5rem;
+          border-radius: 16px;
+          background: #111c1c;
+          border: 1px solid #1e2e2e;
+          text-align: center;
+        }
+
+        .compare-btn {
+          margin-top: 1rem;
+          padding: .8rem 1.4rem;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          font-weight: 600;
+          color: white;
+          background: linear-gradient(90deg,#10b981,#22d3ee);
         }
 
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.8);
-          z-index: 600;
+          background: rgba(0,0,0,.8);
           display: flex;
-          align-items: center;
           justify-content: center;
-          padding: 1rem;
+          align-items: center;
         }
 
         .modal-box {
           background: #0d1a1a;
-          border: 1px solid rgba(16,185,129,0.4);
+          padding: 2rem;
           border-radius: 20px;
-          padding: clamp(1.5rem,5vw,2.5rem);
+          width: 90%;
           max-width: 600px;
-          width: 100%;
-          max-height: 90vh;
-          overflow-y: auto;
-          position: relative;
         }
 
         .cmp-table {
           width: 100%;
+          margin-top: 1rem;
           border-collapse: collapse;
-          margin-top: 1.5rem;
         }
 
         .cmp-table th {
-          padding: 0.75rem 1rem;
-          font-size: 0.8rem;
-          font-weight: 700;
-          letter-spacing: 0.07em;
-          text-transform: uppercase;
-          background: rgba(16,185,129,0.08);
           color: #10b981;
           text-align: left;
-        }
-
-        .cmp-table th:not(:first-child) {
-          text-align: center;
+          padding: .6rem;
         }
 
         .cmp-table td {
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid rgba(42,58,58,0.4);
+          padding: .6rem;
+          border-bottom: 1px solid #2a3a3a;
           color: #9ca3af;
-          font-size: 0.88rem;
-        }
-
-        .cmp-table td:not(:first-child) {
           text-align: center;
         }
 
-        .check-yes {
-          color: #10b981;
-          font-size: 1.1rem;
-          font-weight: 700;
-        }
-
-        .check-no {
-          color: #6b7280;
-          font-size: 1.1rem;
-        }
+        .check-yes { color: #10b981; }
+        .check-no { color: #6b7280; }
       `}</style>
 
-      <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-        <div
-          style={{
-            textAlign: 'center',
-            marginBottom: 'clamp(2rem,5vw,4rem)',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 'clamp(1.8rem,4vw,3rem)',
-              fontWeight: 700,
-              marginBottom: '.75rem',
-              color: '#fff',
-            }}
-          >
-            Trading <span className="shine-word">Products</span>
-          </h2>
+      <div className="prod-grid">
+        {/* Product 1 */}
+        <div className="prod-card-ai">
 
-          <p
-            style={{
-              color: '#9ca3af',
-              fontSize: 'clamp(.88rem,2.5vw,1.05rem)',
-              maxWidth: 520,
-              margin: '0 auto',
-              lineHeight: 1.7,
-            }}
-          >
-            Choose the perfect trading solution that matches your experience level and trading goals.
-          </p>
+          {/* RESTORED LOGO */}
+          <div className="product-logo ai-logo">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+
+          <h3 style={{ color: 'white' }}>Comrades Masterset</h3>
+          <p style={{ color: '#9ca3af' }}>High-speed EA trading system.</p>
+
+          <h2 style={{ color: 'white' }}>5,000 Ksh</h2>
+
+          <ul>
+            {aiFeatures.map((f, i) => (
+              <li key={i} className="feat-li">
+                <span className="feat-icon">{f.icon}</span>
+                {f.label}
+              </li>
+            ))}
+          </ul>
+
+          <button className="btn-access">Access Now</button>
         </div>
 
-        <div className="prod-grid">
-          <div className="prod-card-ai">
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-                background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '1.25rem',
-              }}
-            >
-              ⚡
-            </div>
+        {/* Product 2 */}
+        <div className="prod-card-master">
 
-            <h3
-              style={{
-                fontSize: 'clamp(1.2rem,3vw,1.5rem)',
-                fontWeight: 700,
-                color: '#fff',
-                marginBottom: '.75rem',
-              }}
-            >
-              Masterset Comrades
-            </h3>
-
-            <p
-              style={{
-                color: '#9ca3af',
-                fontSize: '.9rem',
-                marginBottom: '1.5rem',
-                lineHeight: 1.6,
-              }}
-            >
-              High-speed binary bot using trading blocks. Execute ultra-fast trades automatically.
-            </p>
-
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <p
-                style={{
-                  fontSize: 'clamp(2rem,5vw,2.8rem)',
-                  fontWeight: 800,
-                  color: '#fff',
-                }}
-              >
-                5,000 <span style={{ fontSize: '1.1rem' }}>Ksh</span>
-              </p>
-            </div>
-
-            <ul style={{ flex: 1, paddingLeft: 0 }}>
-              {aiFeatures.map((f, i) => (
-                <li key={i} className="feat-li">
-                  <span className="feat-icon">{f.icon}</span>
-                  {f.label}
-                </li>
-              ))}
-            </ul>
-
-            <button className="btn-access">Access Now</button>
+          {/* RESTORED LOGO */}
+          <div className="product-logo master-logo">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
           </div>
 
-          <div className="prod-card-master">
-            <h3
-              style={{
-                fontSize: 'clamp(1.2rem,3vw,1.5rem)',
-                fontWeight: 700,
-                color: '#fff',
-                marginBottom: '.75rem',
-              }}
-            >
-              MasterSet Majiq
-            </h3>
+          <span
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '20px',
+              background: '#10b981',
+              padding: '5px 15px',
+              borderRadius: '20px',
+              color: 'white',
+              fontSize: '12px',
+            }}
+          >
+            Most Popular
+          </span>
 
-            <p
-              style={{
-                color: '#9ca3af',
-                fontSize: '.9rem',
-                marginBottom: '1.5rem',
-                lineHeight: 1.6,
-              }}
-            >
-              Complete trading solution: Neqaset EA + MasterSet Majiq.
-            </p>
+          <h3 style={{ color: 'white' }}>MasterSet Majiq</h3>
+          <p style={{ color: '#9ca3af' }}>
+            Complete trading solution: Neqaset EA + MasterSet Majiq.
+          </p>
 
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <p style={{ color: '#6b7280', fontSize: '.82rem' }}>
-                Was <s>24,499 Ksh</s>
-              </p>
+          <h2 style={{ color: 'white' }}>14,499 Ksh</h2>
 
-              <p
-                style={{
-                  fontSize: 'clamp(2.5rem,6vw,3.2rem)',
-                  fontWeight: 800,
-                  color: '#fff',
-                }}
-              >
-                14,499 <span style={{ fontSize: '1.2rem' }}>Ksh</span>
-              </p>
-            </div>
+          <ul>
+            {masterFeatures.map((f, i) => (
+              <li key={i} className="feat-li">
+                <span className="feat-icon">{f.icon}</span>
+                {f.label}
+              </li>
+            ))}
+          </ul>
 
-            <ul style={{ flex: 1, paddingLeft: 0 }}>
-              {masterFeatures.map((f, i) => (
-                <li key={i} className="feat-li-top">
-                  <span className="feat-icon">{f.icon}</span>
-                  {f.label}
-                </li>
-              ))}
-            </ul>
-
-            <button className="btn-purchase">Purchase Now</button>
-
-            <button
-              onClick={() => setModal(true)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#10b981',
-                cursor: 'pointer',
-              }}
-            >
-              Learn More
-            </button>
-          </div>
+          <button className="btn-purchase">Purchase Now</button>
         </div>
       </div>
 
+      {/* Compare Card */}
+      <div className="compare-card">
+        <p style={{ color: '#9ca3af', lineHeight: 1.6 }}>
+          Neqaset is an EA robot with AI settings. Master Set includes Neqaset
+          plus premium indicators and templates.
+        </p>
+
+        <button className="compare-btn" onClick={() => setModal(true)}>
+          View Detailed Comparison
+        </button>
+      </div>
+
+      {/* Modal */}
       {modal && (
         <div
           className="modal-overlay"
@@ -390,31 +283,7 @@ export default function Products() {
           }}
         >
           <div className="modal-box">
-            <button
-              onClick={() => setModal(false)}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: '#111',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                cursor: 'pointer',
-              }}
-            >
-              ✕
-            </button>
-
-            <h2
-              style={{
-                color: '#fff',
-                textAlign: 'center',
-                marginBottom: '1rem',
-              }}
-            >
+            <h2 style={{ color: 'white', textAlign: 'center' }}>
               Compare Versions
             </h2>
 
@@ -422,34 +291,37 @@ export default function Products() {
               <thead>
                 <tr>
                   <th>Feature</th>
-                  <th>Neqaset</th>
-                  <th>Master Set</th>
+                  <th>Comrades</th>
+                  <th>Master</th>
                 </tr>
               </thead>
 
               <tbody>
                 {compareRows.map((row, i) => (
                   <tr key={i}>
-                    <td>{row.feature}</td>
-                    <td>
-                      {row.neqaset ? (
-                        <span className="check-yes">✓</span>
-                      ) : (
-                        <span className="check-no">—</span>
-                      )}
-                    </td>
-
-                    <td>
-                      {row.master ? (
-                        <span className="check-yes">✓</span>
-                      ) : (
-                        <span className="check-no">—</span>
-                      )}
-                    </td>
+                    <td style={{ textAlign: 'left' }}>{row.feature}</td>
+                    <td>{row.neqaset ? <span className="check-yes">✓</span> : <span className="check-no">—</span>}</td>
+                    <td>{row.master ? <span className="check-yes">✓</span> : <span className="check-no">—</span>}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            <button
+              onClick={() => setModal(false)}
+              style={{
+                marginTop: '1rem',
+                width: '100%',
+                padding: '.8rem',
+                borderRadius: '12px',
+                border: 'none',
+                background: '#10b981',
+                color: 'white',
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
