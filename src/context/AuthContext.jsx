@@ -3,18 +3,24 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-// Always use env API
-const API_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// ===============================
+// CLEAN ENV SWITCH (LOCAL + PROD)
+// ===============================
+// Uses .env for both environments
+const API_URL = import.meta.env.VITE_API_URL;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('neqasel_token'));
+  const [token, setToken] = useState(() =>
+    localStorage.getItem('neqasel_token')
+  );
   const [loading, setLoading] = useState(true);
 
-  // Attach token + fetch user
+  // ===============================
+  // LOAD USER ON REFRESH
+  // ===============================
   useEffect(() => {
-    const loadUser = async () => {
+    const fetchUser = async () => {
       if (!token) {
         setLoading(false);
         return;
@@ -24,9 +30,10 @@ export function AuthProvider({ children }) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         const res = await axios.get(`${API_URL}/auth/me`);
+
         setUser(res.data.user);
       } catch (err) {
-        console.log('Auth check failed:', err.response?.data || err.message);
+        console.log('Auth error:', err.message);
 
         localStorage.removeItem('neqasel_token');
         delete axios.defaults.headers.common['Authorization'];
@@ -38,67 +45,57 @@ export function AuthProvider({ children }) {
       }
     };
 
-    loadUser();
+    fetchUser();
   }, [token]);
 
-  // Save auth helper
+  // ===============================
+  // SAVE AUTH
+  // ===============================
   const saveAuth = (token, user) => {
     localStorage.setItem('neqasel_token', token);
+
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
     setToken(token);
     setUser(user);
   };
 
+  // ===============================
   // REGISTER
+  // ===============================
   const register = async (data) => {
-    try {
-      const res = await axios.post(`${API_URL}/auth/register`, data);
-      saveAuth(res.data.token, res.data.user);
-      return res.data.user;
-    } catch (err) {
-      console.log('Register error:', err.response?.data || err.message);
-      throw err;
-    }
+    const res = await axios.post(`${API_URL}/auth/register`, data);
+    saveAuth(res.data.token, res.data.user);
+    return res.data.user;
   };
 
+  // ===============================
   // LOGIN
+  // ===============================
   const login = async (data) => {
-    try {
-      const res = await axios.post(`${API_URL}/auth/login`, data);
-      saveAuth(res.data.token, res.data.user);
-      return res.data.user;
-    } catch (err) {
-      console.log('Login error:', err.response?.data || err.message);
-      throw err;
-    }
+    const res = await axios.post(`${API_URL}/auth/login`, data);
+    saveAuth(res.data.token, res.data.user);
+    return res.data.user;
   };
 
-  // GOOGLE LOGIN (FIXED + DEBUG READY)
+  // ===============================
+  // GOOGLE LOGIN
+  // ===============================
   const googleLogin = async (credential) => {
-    try {
-      const res = await axios.post(`${API_URL}/auth/google`, {
-        credential,
-      });
+    const res = await axios.post(`${API_URL}/auth/google`, {
+      credential,
+    });
 
-      if (!res.data?.token) {
-        throw new Error('No token returned from server');
-      }
-
-      saveAuth(res.data.token, res.data.user);
-      return res.data.user;
-    } catch (err) {
-      console.log(
-        'Google login error:',
-        err.response?.data || err.message
-      );
-
-      throw err;
-    }
+    saveAuth(res.data.token, res.data.user);
+    return res.data.user;
   };
 
+  // ===============================
   // LOGOUT
+  // ===============================
   const logout = () => {
     localStorage.removeItem('neqasel_token');
+
     delete axios.defaults.headers.common['Authorization'];
 
     setToken(null);
