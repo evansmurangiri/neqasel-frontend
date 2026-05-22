@@ -18,7 +18,7 @@ function formatPhone(raw) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
-  const { user, token: contextToken } = useAuth(); // ✅ FIX: use context token too
+  const { user, token: contextToken } = useAuth();
   const product = PRODUCTS[productKey];
 
   const [phone, setPhone] = useState(user?.phone || '');
@@ -117,7 +117,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     );
   }
 
-  // ================= PAYMENT (FIXED AUTH TOKEN) =================
+  // ================= PAYMENT =================
   const handlePay = async () => {
     if (loading) return;
 
@@ -128,7 +128,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       return;
     }
 
-    // ✅ FIX: correct token source
+    // ✅ FIX: unified token source
     const token =
       contextToken || localStorage.getItem('neqasel_token');
 
@@ -151,10 +151,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
 
         const res = await axios.post(
           `${API_URL}/mpesa/pay`,
-          {
-            phone: formatted,
-            productKey,
-          },
+          { phone: formatted, productKey },
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -204,7 +201,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           }
         }, 4000);
 
-        return; // success stop retry loop
+        return;
 
       } catch (err) {
         lastError = err;
