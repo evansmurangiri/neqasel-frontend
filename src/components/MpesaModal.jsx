@@ -26,7 +26,6 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
   const [downloadToken, setDownloadToken] = useState(null);
   const [polling, setPolling] = useState(false);
 
-  // ✅ NEW STATES
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -133,13 +132,23 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     setStep('waiting');
 
     try {
-      const res = await axios.post(`${API_URL}/mpesa/pay`, {
-        phone: formatted,
-        productKey,
-      });
+      // 🔥 FIX: ADD TOKEN
+      const token = localStorage.getItem('token');
+
+      const res = await axios.post(
+        `${API_URL}/mpesa/pay`,
+        {
+          phone: formatted,
+          productKey,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setCheckoutRequestId(res.data.checkoutRequestId);
-
       setMessage('📱 STK sent! Check your phone and enter PIN.');
 
       setPolling(true);
@@ -147,7 +156,12 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       const interval = setInterval(async () => {
         try {
           const statusRes = await axios.get(
-            `${API_URL}/mpesa/status/${res.data.checkoutRequestId}`
+            `${API_URL}/mpesa/status/${res.data.checkoutRequestId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
 
           const { status, downloadToken } = statusRes.data;
@@ -166,10 +180,11 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
             setPolling(false);
             setErrorMsg('Payment failed');
             setStep('error');
-            setMessage('');
             setLoading(false);
           }
-        } catch {}
+        } catch (err) {
+          console.log(err);
+        }
       }, 4000);
 
       setTimeout(() => {
@@ -178,7 +193,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       }, 120000);
 
     } catch (err) {
-      setStep('error');
+      console.log(err);
       setErrorMsg(err.response?.data?.message || 'Payment failed');
       setLoading(false);
       setMessage('');
@@ -234,18 +249,13 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           cursor: 'pointer'
         }}>✕</button>
 
-        {/* HEADER */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <h2 style={{ color: '#fff', fontWeight: 700 }}>
             Pay with M-Pesa
           </h2>
-
-          <p style={{ color: '#9ca3af' }}>
-            {product.name}
-          </p>
+          <p style={{ color: '#9ca3af' }}>{product.name}</p>
         </div>
 
-        {/* AMOUNT */}
         <div style={{
           background: 'rgba(16,185,129,.06)',
           border: '1px solid rgba(16,185,129,.15)',
@@ -260,7 +270,6 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           </div>
         </div>
 
-        {/* PHONE */}
         <label style={{ color: '#9ca3af', fontSize: 12 }}>
           M-PESA PHONE NUMBER
         </label>
@@ -274,9 +283,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           padding: '0.75rem',
           marginTop: 5
         }}>
-          <span style={{ color: '#10b981', marginRight: 10 }}>
-            🇰🇪 +254
-          </span>
+          <span style={{ color: '#10b981', marginRight: 10 }}>🇰🇪 +254</span>
 
           <input
             value={phone}
@@ -292,23 +299,10 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           />
         </div>
 
-        <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 10 }}>
-          Enter the phone number registered with M-Pesa. You will receive a prompt.
-        </p>
+        {errorMsg && <p style={{ color: 'red', fontSize: 12 }}>{errorMsg}</p>}
 
-        {/* ERROR */}
-        {errorMsg && (
-          <p style={{ color: 'red', fontSize: 12 }}>{errorMsg}</p>
-        )}
+        {message && <p style={{ color: '#10b981', fontSize: 12 }}>{message}</p>}
 
-        {/* MESSAGE */}
-        {message && (
-          <p style={{ color: '#10b981', fontSize: 12, marginTop: 10 }}>
-            {message}
-          </p>
-        )}
-
-        {/* BUTTON */}
         <button
           onClick={handlePay}
           disabled={loading}
@@ -317,9 +311,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
             marginTop: 15,
             padding: '0.9rem',
             borderRadius: 12,
-            background: loading
-              ? '#065f46'
-              : 'linear-gradient(to right,#10b981,#06b6d4)',
+            background: loading ? '#065f46' : 'linear-gradient(to right,#10b981,#06b6d4)',
             color: '#fff',
             fontWeight: 700,
             border: 'none',
@@ -337,6 +329,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
         }}>
           Secured by Safaricom M-Pesa STK Push
         </p>
+
       </div>
     </div>
   );
