@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import AuthModal from './AuthModal';
 
 const navLinks = [
   { label: 'Home', href: '#hero' },
@@ -22,7 +24,9 @@ export function CandleLogo({ size = 34 }) {
 }
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authModal, setAuthModal] = useState(null); // 'login' | 'register'
 
   const scrollTo = (href) => {
     const el = document.querySelector(href);
@@ -33,20 +37,20 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        .nav-link-btn {
-          padding: 8px 14px; border-radius: 8px; font-size: .82rem;
-          color: #9ca3af; background: rgba(26,36,36,0.7);
-          border: 1px solid rgba(42,58,58,0.5); cursor: pointer;
-          font-family: inherit; transition: all .2s; white-space: nowrap;
+        .desktop-nav { display: flex; }
+        .mobile-menu-btn { display: none !important; }
+        @media (max-width: 768px) {
+          .desktop-nav { display: none !important; }
+          .mobile-menu-btn { display: flex !important; }
         }
-        .nav-link-btn:hover { color: #10b981; border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.07); }
       `}</style>
 
       <nav style={{
         position: 'sticky', top: 0, zIndex: 200,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0.85rem 1.5rem',
-        background: 'rgba(10,15,15,0.92)', backdropFilter: 'blur(20px)',
+        background: 'rgba(10,15,15,0.92)',
+        backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(30,46,46,0.5)',
       }}>
         {/* Logo */}
@@ -58,27 +62,42 @@ export default function Navbar() {
           <span style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: 2, background: 'linear-gradient(135deg,#10b981,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>neqasel</span>
         </div>
 
-        {/* Desktop links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} className="desktop-nav">
+        {/* Desktop nav links */}
+        <div className="desktop-nav" style={{ alignItems: 'center', gap: 6 }}>
           {navLinks.map(link => (
-            <button key={link.label} onClick={() => scrollTo(link.href)} className="nav-link-btn">{link.label}</button>
+            <button key={link.label} onClick={() => scrollTo(link.href)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: '.82rem', color: '#9ca3af', background: 'rgba(26,36,36,0.7)', border: '1px solid rgba(42,58,58,0.5)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#10b981'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'; e.currentTarget.style.background = 'rgba(16,185,129,0.07)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.borderColor = 'rgba(42,58,58,0.5)'; e.currentTarget.style.background = 'rgba(26,36,36,0.7)'; }}
+            >{link.label}</button>
           ))}
         </div>
 
         {/* Desktop auth */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="desktop-nav">
-          <button style={{ padding: '8px 18px', borderRadius: 8, fontSize: '.82rem', fontWeight: 500, color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(16,185,129,0.08)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >Sign In</button>
-          <button style={{ padding: '8px 18px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, color: '#fff', background: '#10b981', border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#059669'}
-            onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
-          >Sign Up</button>
+        <div className="desktop-nav" style={{ alignItems: 'center', gap: 10 }}>
+          {user ? (
+            <>
+              <span style={{ color: '#10b981', fontSize: '.84rem', fontWeight: 500 }}>👋 {user.name.split(' ')[0]}</span>
+              <button onClick={logout} style={{ padding: '8px 18px', borderRadius: 8, fontSize: '.82rem', fontWeight: 500, color: '#f87171', border: '1px solid rgba(248,113,113,0.25)', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >Sign Out</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setAuthModal('login')} style={{ padding: '8px 18px', borderRadius: 8, fontSize: '.82rem', fontWeight: 500, color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(16,185,129,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >Sign In</button>
+              <button onClick={() => setAuthModal('register')} style={{ padding: '8px 18px', borderRadius: 8, fontSize: '.82rem', fontWeight: 600, color: '#fff', background: '#10b981', border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#059669'}
+                onMouseLeave={e => e.currentTarget.style.background = '#10b981'}
+              >Sign Up</button>
+            </>
+          )}
         </div>
 
         {/* Hamburger */}
-        <button onClick={() => setMenuOpen(v => !v)} className="mobile-menu-btn" style={{ display: 'none', flexDirection: 'column', gap: 5, padding: 8, background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => setMenuOpen(v => !v)} className="mobile-menu-btn" style={{ flexDirection: 'column', gap: 5, padding: 8, background: 'none', border: 'none', cursor: 'pointer' }}>
           <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#10b981' : '#9ca3af', borderRadius: 2, transition: 'all .2s', transform: menuOpen ? 'rotate(45deg) translate(5px,5px)' : 'none' }} />
           <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? 'transparent' : '#9ca3af', borderRadius: 2, transition: 'all .2s' }} />
           <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#10b981' : '#9ca3af', borderRadius: 2, transition: 'all .2s', transform: menuOpen ? 'rotate(-45deg) translate(5px,-5px)' : 'none' }} />
@@ -96,19 +115,28 @@ export default function Navbar() {
               >{link.label}</button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '.75rem' }}>
-            <button style={{ flex: 1, padding: '.85rem', borderRadius: 8, fontSize: '.9rem', fontWeight: 500, color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>Sign In</button>
-            <button style={{ flex: 1, padding: '.85rem', borderRadius: 8, fontSize: '.9rem', fontWeight: 600, color: '#fff', background: '#10b981', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Sign Up</button>
-          </div>
+          {user ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+              <span style={{ color: '#10b981', fontSize: '.9rem', textAlign: 'center' }}>👋 {user.name}</span>
+              <button onClick={() => { logout(); setMenuOpen(false); }} style={{ padding: '.85rem', borderRadius: 8, fontSize: '.9rem', fontWeight: 500, color: '#f87171', border: '1px solid rgba(248,113,113,0.25)', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>Sign Out</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '.75rem' }}>
+              <button onClick={() => { setAuthModal('login'); setMenuOpen(false); }} style={{ flex: 1, padding: '.85rem', borderRadius: 8, fontSize: '.9rem', fontWeight: 500, color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>Sign In</button>
+              <button onClick={() => { setAuthModal('register'); setMenuOpen(false); }} style={{ flex: 1, padding: '.85rem', borderRadius: 8, fontSize: '.9rem', fontWeight: 600, color: '#fff', background: '#10b981', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Sign Up</button>
+            </div>
+          )}
         </div>
       )}
 
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
-        }
-      `}</style>
+      {/* Auth Modal */}
+      {authModal && (
+        <AuthModal
+          mode={authModal}
+          onClose={() => setAuthModal(null)}
+          onSwitch={() => setAuthModal(authModal === 'login' ? 'register' : 'login')}
+        />
+      )}
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import MpesaModal from './MpesaModal';
 
 const aiFeatures = [
   { icon: '🎨', label: 'Binary Bot Blocks' },
@@ -29,8 +30,9 @@ const compareRows = [
   { feature: 'Priority Support', neqaset: false, master: true },
 ];
 
-export default function Products() {
+export default function Products({ onOpenAuth }) {
   const [modal, setModal] = useState(false);
+  const [payModal, setPayModal] = useState(null);
 
   return (
     <section
@@ -193,7 +195,6 @@ export default function Products() {
         {/* Product 1 */}
         <div className="prod-card-ai">
 
-          {/* RESTORED LOGO */}
           <div className="product-logo ai-logo">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
@@ -214,13 +215,17 @@ export default function Products() {
             ))}
           </ul>
 
-          <button className="btn-access">Access Now</button>
+          <button
+            className="btn-access"
+            onClick={() => setPayModal('comrades')}
+          >
+            Access Now
+          </button>
         </div>
 
         {/* Product 2 */}
         <div className="prod-card-master">
 
-          {/* RESTORED LOGO */}
           <div className="product-logo master-logo">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -243,6 +248,7 @@ export default function Products() {
           </span>
 
           <h3 style={{ color: 'white' }}>MasterSet Majiq</h3>
+
           <p style={{ color: '#9ca3af' }}>
             Complete trading solution: Neqaset EA + MasterSet Majiq.
           </p>
@@ -258,7 +264,12 @@ export default function Products() {
             ))}
           </ul>
 
-          <button className="btn-purchase">Purchase Now</button>
+          <button
+            className="btn-purchase"
+            onClick={() => setPayModal('majiq')}
+          >
+            Purchase Now
+          </button>
         </div>
       </div>
 
@@ -300,8 +311,20 @@ export default function Products() {
                 {compareRows.map((row, i) => (
                   <tr key={i}>
                     <td style={{ textAlign: 'left' }}>{row.feature}</td>
-                    <td>{row.neqaset ? <span className="check-yes">✓</span> : <span className="check-no">—</span>}</td>
-                    <td>{row.master ? <span className="check-yes">✓</span> : <span className="check-no">—</span>}</td>
+                    <td>
+                      {row.neqaset ? (
+                        <span className="check-yes">✓</span>
+                      ) : (
+                        <span className="check-no">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {row.master ? (
+                        <span className="check-yes">✓</span>
+                      ) : (
+                        <span className="check-no">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -324,6 +347,15 @@ export default function Products() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* MPESA MODAL */}
+      {payModal && (
+        <MpesaModal
+          productKey={payModal}
+          onClose={() => setPayModal(null)}
+          onOpenAuth={onOpenAuth}
+        />
       )}
     </section>
   );
