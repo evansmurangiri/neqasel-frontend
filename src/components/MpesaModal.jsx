@@ -15,6 +15,8 @@ function formatPhone(raw) {
   return digits;
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
   const { user } = useAuth();
   const product = PRODUCTS[productKey];
@@ -30,8 +32,6 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
   const [message, setMessage] = useState('');
 
   const API_URL = import.meta.env.VITE_API_URL;
-
-  const getToken = () => localStorage.getItem('token');
 
   // ================= NOT LOGGED IN =================
   if (!user) {
@@ -117,7 +117,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     );
   }
 
-  // ================= PAYMENT =================
+  // ================= PAYMENT (WITH RETRY FIX) =================
   const handlePay = async () => {
     if (loading) return;
 
@@ -128,77 +128,106 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       return;
     }
 
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setErrorMsg('Session expired. Please login again.');
+      onOpenAuth('login');
+      return;
+    }
+
     setErrorMsg('');
     setLoading(true);
     setMessage('Sending STK push...');
     setStep('waiting');
 
-    try {
-      const token = getToken();
+    let lastError = null;
 
-      const res = await axios.post(
-        `${API_URL}/mpesa/pay`,
-        {
-          phone: formatted,
-          productKey,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        setMessage(`Sending STK push... (${attempt}/3)`);
+
+        const res = await axios.post(
+          `${API_URL}/mpesa/pay`,
+          {
+            phone: formatted,
+            productKey,
           },
-        }
-      );
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            timeout: 20000,
+          }
+        );
 
-      setCheckoutRequestId(res.data.checkoutRequestId);
-      setMessage('📱 STK sent! Check your phone and enter PIN.');
+        const checkoutId = res.data.checkoutRequestId;
+        setCheckoutRequestId(checkoutId);
 
-      setPolling(true);
+        setMessage('📱 STK sent! Check phone and enter PIN');
 
-      const interval = setInterval(async () => {
-        try {
-          const statusRes = await axios.get(
-            `${API_URL}/mpesa/status/${res.data.checkoutRequestId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+        setPolling(true);
+
+        const interval = setInterval(async () => {
+          try {
+            const statusRes = await axios.get(
+              `${API_URL}/mpesa/status/${checkoutId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            const { status, downloadToken } = statusRes.data;
+
+            if (status === 'completed') {
+              clearInterval(interval);
+              setPolling(false);
+              setDownloadToken(downloadToken);
+              setStep('success');
+              setMessage('Payment successful 🎉');
+              setLoading(false);
             }
-          );
 
-          const { status, downloadToken } = statusRes.data;
-
-          if (status === 'completed') {
-            clearInterval(interval);
-            setPolling(false);
-            setDownloadToken(downloadToken);
-            setStep('success');
-            setMessage('Payment successful 🎉');
-            setLoading(false);
+            if (status === 'failed') {
+              clearInterval(interval);
+              setPolling(false);
+              setErrorMsg('Payment failed');
+              setStep('error');
+              setLoading(false);
+            }
+          } catch (err) {
+            console.log('Status error:', err.message);
           }
+        }, 4000);
 
-          if (status === 'failed') {
-            clearInterval(interval);
-            setPolling(false);
-            setErrorMsg('Payment failed');
-            setStep('error');
-            setLoading(false);
-          }
-        } catch (err) {
-          console.log(err);
+        return; // SUCCESS → STOP RETRY LOOP
+
+      } catch (err) {
+        lastError = err;
+
+        const status = err.response?.status;
+
+        // ❌ DO NOT RETRY THESE
+        if (status === 401 || status === 400) {
+          setErrorMsg(err.response?.data?.message || 'Payment failed');
+          setLoading(false);
+          return;
         }
-      }, 4000);
 
-      setTimeout(() => {
-        clearInterval(interval);
-        setLoading(false);
-      }, 120000);
-
-    } catch (err) {
-      console.log(err);
-      setErrorMsg(err.response?.data?.message || 'Payment failed');
-      setLoading(false);
-      setMessage('');
+        setMessage(`Retrying... (${attempt}/3)`);
+        await sleep(attempt * 2000);
+      }
     }
+
+    setErrorMsg(
+      lastError?.response?.data?.message ||
+      'Payment failed after multiple attempts'
+    );
+
+    setLoading(false);
+    setMessage('');
   };
 
   const handleDownload = () => {
@@ -212,7 +241,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     setMessage('');
   };
 
-  // ================= UI (UNCHANGED EXACTLY) =================
+  // ================= UI (UNCHANGED) =================
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -284,9 +313,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           padding: '0.75rem',
           marginTop: 5
         }}>
-          <span style={{ color: '#10b981', marginRight: 10 }}>
-            🇰🇪 +254
-          </span>
+          <span style={{ color: '#10b981', marginRight: 10 }}>🇰🇪 +254</span>
 
           <input
             value={phone}
@@ -331,7 +358,6 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
         }}>
           Secured by Safaricom M-Pesa STK Push
         </p>
-
       </div>
     </div>
   );
