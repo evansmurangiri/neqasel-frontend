@@ -18,7 +18,7 @@ function formatPhone(raw) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
-  const { user } = useAuth();
+  const { user, token: contextToken } = useAuth(); // ✅ FIX: use context token too
   const product = PRODUCTS[productKey];
 
   const [phone, setPhone] = useState(user?.phone || '');
@@ -117,7 +117,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     );
   }
 
-  // ================= PAYMENT (WITH RETRY FIX) =================
+  // ================= PAYMENT (FIXED AUTH TOKEN) =================
   const handlePay = async () => {
     if (loading) return;
 
@@ -128,7 +128,9 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       return;
     }
 
-    const token = localStorage.getItem('token');
+    // ✅ FIX: correct token source
+    const token =
+      contextToken || localStorage.getItem('neqasel_token');
 
     if (!token) {
       setErrorMsg('Session expired. Please login again.');
@@ -202,14 +204,13 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           }
         }, 4000);
 
-        return; // SUCCESS → STOP RETRY LOOP
+        return; // success stop retry loop
 
       } catch (err) {
         lastError = err;
 
         const status = err.response?.status;
 
-        // ❌ DO NOT RETRY THESE
         if (status === 401 || status === 400) {
           setErrorMsg(err.response?.data?.message || 'Payment failed');
           setLoading(false);
@@ -340,7 +341,9 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
             marginTop: 15,
             padding: '0.9rem',
             borderRadius: 12,
-            background: loading ? '#065f46' : 'linear-gradient(to right,#10b981,#06b6d4)',
+            background: loading
+              ? '#065f46'
+              : 'linear-gradient(to right,#10b981,#06b6d4)',
             color: '#fff',
             fontWeight: 700,
             border: 'none',
