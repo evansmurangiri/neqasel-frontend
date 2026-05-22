@@ -8,10 +8,13 @@ const PRODUCTS = {
 };
 
 function formatPhone(raw) {
+  if (!raw) return '';
   const digits = raw.replace(/\D/g, '');
+
   if (digits.startsWith('0') && digits.length === 10) return '254' + digits.slice(1);
   if (digits.startsWith('254') && digits.length === 12) return digits;
   if (digits.startsWith('7') && digits.length === 9) return '254' + digits;
+
   return digits;
 }
 
@@ -20,11 +23,9 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
   const product = PRODUCTS[productKey];
 
   const [phone, setPhone] = useState(user?.phone || '');
-  const [step, setStep] = useState('form');
   const [errorMsg, setErrorMsg] = useState('');
   const [checkoutRequestId, setCheckoutRequestId] = useState(null);
   const [downloadToken, setDownloadToken] = useState(null);
-  const [polling, setPolling] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -75,7 +76,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           </h3>
 
           <p style={{ color: '#9ca3af', fontSize: '.9rem', marginTop: 10 }}>
-            You need an account to purchase <strong style={{ color: '#fff' }}>{product.name}</strong>
+            You need an account to purchase <strong style={{ color: '#fff' }}>{product?.name}</strong>
           </p>
 
           <button
@@ -121,7 +122,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
 
     const formatted = formatPhone(phone);
 
-    if (formatted.length !== 12) {
+    if (!formatted || formatted.length !== 12) {
       setErrorMsg('Enter valid M-Pesa number (e.g. 0712345678)');
       return;
     }
@@ -129,11 +130,17 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     setErrorMsg('');
     setLoading(true);
     setMessage('Sending STK push...');
-    setStep('waiting');
 
     try {
-      // 🔥 FIX: ADD TOKEN
+      // 🔥 FIX: token MUST exist
       const token = localStorage.getItem('token');
+
+      if (!token) {
+        setLoading(false);
+        setErrorMsg('Session expired. Please login again.');
+        onOpenAuth('login');
+        return;
+      }
 
       const res = await axios.post(
         `${API_URL}/mpesa/pay`,
@@ -149,9 +156,7 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       );
 
       setCheckoutRequestId(res.data.checkoutRequestId);
-      setMessage('📱 STK sent! Check your phone and enter PIN.');
-
-      setPolling(true);
+      setMessage('📱 STK sent! Enter PIN on your phone.');
 
       const interval = setInterval(async () => {
         try {
@@ -168,22 +173,18 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
 
           if (status === 'completed') {
             clearInterval(interval);
-            setPolling(false);
             setDownloadToken(downloadToken);
-            setStep('success');
             setMessage('Payment successful 🎉');
             setLoading(false);
           }
 
           if (status === 'failed') {
             clearInterval(interval);
-            setPolling(false);
             setErrorMsg('Payment failed');
-            setStep('error');
             setLoading(false);
           }
         } catch (err) {
-          console.log(err);
+          console.log('STATUS CHECK ERROR:', err?.response?.data || err.message);
         }
       }, 4000);
 
@@ -193,8 +194,15 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
       }, 120000);
 
     } catch (err) {
-      console.log(err);
-      setErrorMsg(err.response?.data?.message || 'Payment failed');
+      console.log('PAY ERROR:', err?.response?.data || err.message);
+
+      if (err.response?.status === 401) {
+        setErrorMsg('Unauthorized. Please login again.');
+        onOpenAuth('login');
+      } else {
+        setErrorMsg(err.response?.data?.message || 'Payment failed');
+      }
+
       setLoading(false);
       setMessage('');
     }
@@ -204,14 +212,6 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
     window.open(`${API_URL}/download/${downloadToken}`, '_blank');
   };
 
-  const reset = () => {
-    setStep('form');
-    setErrorMsg('');
-    setPhone(user?.phone || '');
-    setMessage('');
-  };
-
-  // ================= UI =================
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -249,58 +249,43 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
           cursor: 'pointer'
         }}>✕</button>
 
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <h2 style={{ color: '#fff', fontWeight: 700 }}>
-            Pay with M-Pesa
-          </h2>
-          <p style={{ color: '#9ca3af' }}>{product.name}</p>
-        </div>
+        <h2 style={{ color: '#fff', textAlign: 'center' }}>
+          Pay with M-Pesa
+        </h2>
+
+        <p style={{ color: '#9ca3af', textAlign: 'center' }}>
+          {product?.name}
+        </p>
 
         <div style={{
           background: 'rgba(16,185,129,.06)',
-          border: '1px solid rgba(16,185,129,.15)',
           borderRadius: 12,
           padding: '1rem',
           textAlign: 'center',
-          marginBottom: 20
+          marginTop: 15
         }}>
           <div style={{ color: '#9ca3af', fontSize: 12 }}>Amount</div>
-          <div style={{ color: '#fff', fontSize: 28, fontWeight: 800 }}>
-            Ksh {product.price.toLocaleString()}
+          <div style={{ color: '#fff', fontSize: 28 }}>
+            Ksh {product?.price?.toLocaleString()}
           </div>
         </div>
 
-        <label style={{ color: '#9ca3af', fontSize: 12 }}>
-          M-PESA PHONE NUMBER
-        </label>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          background: '#1a2e2c',
-          border: '1px solid #2a4a48',
-          borderRadius: 10,
-          padding: '0.75rem',
-          marginTop: 5
-        }}>
-          <span style={{ color: '#10b981', marginRight: 10 }}>🇰🇪 +254</span>
-
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="0793582095"
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: '#fff'
-            }}
-          />
-        </div>
+        <input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="0712345678"
+          style={{
+            width: '100%',
+            marginTop: 15,
+            padding: '0.8rem',
+            borderRadius: 10,
+            border: '1px solid #2a4a48',
+            background: '#1a2e2c',
+            color: '#fff'
+          }}
+        />
 
         {errorMsg && <p style={{ color: 'red', fontSize: 12 }}>{errorMsg}</p>}
-
         {message && <p style={{ color: '#10b981', fontSize: 12 }}>{message}</p>}
 
         <button
@@ -314,22 +299,28 @@ export default function MpesaModal({ productKey, onClose, onOpenAuth }) {
             background: loading ? '#065f46' : 'linear-gradient(to right,#10b981,#06b6d4)',
             color: '#fff',
             fontWeight: 700,
-            border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer'
+            border: 'none'
           }}
         >
           {loading ? 'Processing...' : 'Send Payment Request'}
         </button>
 
-        <p style={{
-          textAlign: 'center',
-          fontSize: 11,
-          color: '#6b7280',
-          marginTop: 10
-        }}>
-          Secured by Safaricom M-Pesa STK Push
-        </p>
-
+        {downloadToken && (
+          <button
+            onClick={handleDownload}
+            style={{
+              width: '100%',
+              marginTop: 10,
+              padding: '0.8rem',
+              borderRadius: 10,
+              background: '#06b6d4',
+              color: '#fff',
+              border: 'none'
+            }}
+          >
+            Download File
+          </button>
+        )}
       </div>
     </div>
   );
